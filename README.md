@@ -10,7 +10,7 @@ The configuration is provided as is and there is no guarantee or liability for a
 ## Installation instructuions - own Telegraf instance.
 1. Setup and configure your InfluxDB environment (https://hub.docker.com/_/influxdb)
 2. Setup Telegreaf application to stream data into InfluxDB
-3. Copy modbus.conf from /telegraf.d/ folder to your /telegraf.d/ folder
+3. Copy modbus.conf from '/telegraf/telegraf.d/' folder to your /telegraf.d/ folder
 4. Setup Grafana
 5. Import the Grafana Dashboard as provided in the "EKD_StoragePRO_values.json"
 
