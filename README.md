@@ -7,6 +7,18 @@ Here some screenshots of the Dashboard:
 
 The configuration is provided as is and there is no guarantee or liability for any damage may happen to other systems.
 
+My personal configuration is based on Docker compose. I consist of a InfluxDB instance with Kapacitor, Chronograf and Telegraf as well as a reverse proxy providing central access to the Influx services.
+
+The compose file will introduce two networks:
+1. Influx: used for the communication within the services required (InfluxDB, Chronograf, Kapacitor, Telegraf)
+2. DMZ: Used as external network (in my case connected to a dedicated VLAN) to provice access to the service from the outside.
+
+All containers are connected to the Influx network to provide internal connectivity.
+Only the Revers Proxy (nginx) is connected to the DMZ network (with static IP-address) to provide access to Influxdb, Chronograf and Kapacitor services from the outside world.
+
+This setup may be a bit over the edge - but (not only) for security reasons I am trying to isolate interconnected services within a closed environment and provide only the required access points (via reverse proxy) to the outside world.
+Actually, this may also be the possible if only the required ports are exposed via docker configuration. However, all my Docker container, and this is just one of many, running on a single host and exposing all required ports on a single interface has some other drawbacks.
+
 ## Installation instructions - own Telegraf instance.
 1. Setup and configure your InfluxDB environment (https://hub.docker.com/_/influxdb)
 2. Setup Telegreaf application to stream data into InfluxDB
