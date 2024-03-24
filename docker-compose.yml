@@ -1,0 +1,122 @@
+version: '3.7'
+
+services:
+  proxy:
+    image: jwilder/nginx-proxy
+    container_name: influx_proxy
+    restart: always
+    ports:
+       - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./proxy/certs:/etc/nginx/certs:ro
+      - ./proxy/nginx/html:/usr/share/nginx/html
+      - ./proxy/nginx/proxy.conf:/etc/nginx/proxy.conf:ro
+    depends_on:
+      - influxdb
+    labels:
+      - "co.elasti.logs/module=nginx"
+      - "co.elastic.logs/fileset.stdout=access"
+      - "co.elastic.logs/fileset.stderr=error"
+      - "co.elastic.metrics/module=nginx"
+      - "co.elastic.metrics/metricsets=substatus"
+      - "co.elastic.metrics/hosts='$${data.host}:$${data.port}'"
+    networks:
+      dmz:
+          #your static IP address to access DB services via reverse proxy
+          ipv4_address: x.x.x.x 
+      influx:
+  
+  influxdb:
+    image: influxdb:1.8
+    hostname: "influxdb"
+    container_name: influxdb
+    restart: always
+    ports: 
+        - "8086:8086"
+    environment:
+      VIRTUAL_HOST: influxdb.YOUR.DOMAIN
+      VIRTUAL_PORT: 8086
+      VIRTUAL_PROTO: http
+      LETSENCRYPT_HOST: influxdb.YOUR.DOMAIN
+      INFLUXDB_HTTP_FLUX_ENABLED: true
+    volumes:
+        - influx-data:/var/lib/influxdb
+    networks:
+      - influx
+  
+  chronograf:
+    image: "chronograf:latest"
+    hostname: "chronograf"
+    container_name: chronograf
+    restart: always
+    depends_on:
+      - influxdb
+    ports: 
+        - "8888:8888"
+    volumes: 
+        - chronograf-data:/var/lib/chronograf
+    environment:
+      VIRTUAL_HOST: chronograf.YOUR.DOMAIN
+      VIRTUAL_PORT: 8888
+      VIRTUAL_PROTO: http
+      LETSENCRYPT_HOST: chronograf.YOUR.DOMAIN
+    networks:
+        - influx
+
+  telegraf:
+    build:
+      context: telegraf/
+      args:
+        TELEGRAF_VERSION: latest 
+    hostname: "telegraf"
+    container_name: telegraf
+    restart: always
+    depends_on:
+      - influxdb
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - ./telegraf/telegraf.d/:/etc/telegraf/telegraf.d/
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      USER: "telegraf"
+      INFLUX_PASSWORD: "CHANGE-ME"
+    networks:
+      - influx
+  
+  kapacitor:
+    image: "kapacitor:latest"
+    hostname: "kapacitor"
+    container_name: "kapacitor"
+    restart: always
+    volumes: 
+        - kapacitor-data:/var/lib/kapacitor
+    depends_on:
+      - influxdb
+    environment:
+      VIRTUAL_HOST: kapacitor.YOUR.DOMAIN
+      VIRTUAL_PORT: 9092
+      VIRTUAL_PROTO: http
+      LETSENCRYPT_HOST: kapacitor.YOUR.DOMAIN
+      KAPACITOR_INFLUXDB_0_URLS_0: http://influxdb:8086
+    ports:
+        - "9092:9092"
+    networks:
+        - influx
+
+volumes:
+    telegraf-data:
+      name: telegraf-prod_DATA
+    chronograf-data:
+      name: chronograf-prod_DATA
+    influx-data:
+      name: influx-prod_DATA
+    kapacitor-data:
+      name: kapacitor-prod_DATA
+
+networks:
+  influx:
+    driver: bridge
+  dmz:
+    external: true
+    name: dmz_vlan
