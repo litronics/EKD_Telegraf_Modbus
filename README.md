@@ -7,7 +7,7 @@ Here some screenshots of the Dashboard:
 
 The configuration is provided as is and there is no guarantee or liability for any damage may happen to other systems.
 
-## Installation instructuions - own Telegraf instance.
+## Installation instructions - own Telegraf instance.
 1. Setup and configure your InfluxDB environment (https://hub.docker.com/_/influxdb)
 2. Setup Telegreaf application to stream data into InfluxDB
 3. Copy modbus.conf from '/telegraf/telegraf.d/' folder to your /telegraf.d/ folder
